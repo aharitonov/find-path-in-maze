@@ -11,15 +11,15 @@ class Map {
 
 	private array $map;
 	private int $sizeX, $sizeY;
-	private int $targetX, $targetY;
+	private int $exitX, $exitY;
 	private int $startX, $startY;
 
 	public function __construct(
 		array $map,
 		int $startX  = null,
 		int $startY  = null,
-		int $targetX = null,
-		int $targetY = null
+		int $exitX = null,
+		int $exitY = null
 	) {
 
 		$this->map = $map;
@@ -45,17 +45,26 @@ class Map {
 		if (null !== $x || null !== $y) {
 			$this->map[$x][$y] = self::FREE;
 		}
-		$targetX ??= $x;
-		$targetY ??= $y;
-		if ($targetX === null || $targetY === null) {
+		$exitX ??= $x;
+		$exitY ??= $y;
+		if ($exitX === null || $exitY === null) {
 			throw new RuntimeException('Exit position undefined');
 		}
-		$this->targetX = $targetX;
-		$this->targetY = $targetY;
-		$this->map[$this->targetX][$this->targetY] = self::EXIT;
+		$this->exitX = $exitX;
+		$this->exitY = $exitY;
+		$this->map[$this->exitX][$this->exitY] = self::EXIT;
+	}
 
-		$this->showln(sprintf('Start: [%d, %d]', $this->startX, $this->startY));
-		$this->showln(sprintf('Exit: [%d, %d]', $this->targetX, $this->targetY));
+	public function getSize(): array {
+		return [$this->sizeX, $this->sizeY];
+	}
+
+	public function getStart(): array {
+		return [$this->startX, $this->startY];
+	}
+
+	public function getExit(): array {
+		return [$this->exitX, $this->exitY];
 	}
 
 	public static function findStart(self $me): array {
@@ -113,11 +122,7 @@ class Map {
 			$s .= PHP_EOL;
 		}
 		$frontLine = str_repeat('-', 2 * count($rows[0]) + 1) . PHP_EOL;
-		return $frontLine . $s . $frontLine . PHP_EOL;
-	}
-
-	private function showln(string $s) {
-		print($s . PHP_EOL);
+		return $frontLine . $s . $frontLine;
 	}
 
 	private function getDirections(int $x, int $y) {
@@ -137,26 +142,56 @@ class Map {
 		return $a;
 	}
 
-	private function checkExitInX(int $beginX, int $endX, int $y): ?int {
-		for ($xn = $beginX; $xn < $endX; $xn++) {
-			if ($this->checkExit($xn, $y)) {
-				return $xn;
-			}
-		}
-		return null;
+	public function isExit(int $x, int $y): bool {
+		return $this->map[$x][$y] === self::EXIT;
 	}
 
-	private function checkExitInY($x, int $beginY, int $endY): ?int {
-		for ($yn = $beginY; $yn < $endY; $yn++) {
-			if ($this->checkExit($x, $yn)) {
-				return $yn;
-			}
-		}
-		return null;
-	}
+	/**
+	 * Проверяем выход по какому либо направлению
+	 *
+	 * @param int $x
+	 * @param int $y
+	 * @return array|null
+	 */
+	public function checkExit(int $x, int $y): ?array {
 
-	public function checkExit(int $x, int $y): bool {
-		return isset($this->map[$x][$y]) && $this->map[$x][$y] === self::EXIT;
+		// вверх
+		$i = $y+1;
+		while ($this->moveable($x, $i)) {
+			if ($this->isExit($x, $i)) {
+				return [$x, $i];
+			}
+			$i++;
+		}
+
+		// вниз
+		$i = $y-1;
+		while ($this->moveable($x, $i)) {
+			if ($this->isExit($x, $i)) {
+				return [$x, $i];
+			}
+			$i--;
+		}
+
+		// влево
+		$i = $x-1;
+		while ($this->moveable($i, $y)) {
+			if ($this->isExit($i, $y)) {
+				return [$i, $y];
+			}
+			$i--;
+		}
+
+		// вправо
+		$i = $x+1;
+		while ($this->moveable($i, $y)) {
+			if ($this->isExit($i, $y)) {
+				return [$i, $y];
+			}
+			$i++;
+		}
+
+		return null;
 	}
 
 	private function moveable($x, $y): bool {
@@ -238,6 +273,8 @@ class Map {
 
 		// и сортируем их по количеству вертикальных пересечений на них
 		//uasort($axes, static fn($a, $b) => ($a[2] - $a[1]) < ($b[2] - $b[1]));
+
+		// сортируем их по удалённости
 		usort($axes, static function (array $axis1, array $axis2) use ($Y) {
 			return abs($Y - $axis1[0]) > abs($Y - $axis2[0]);
 		});
@@ -259,6 +296,8 @@ class Map {
 
 		// и сортируем их по количеству горизонтальных пересечений
 		//uasort($axes, static fn($a, $b) => ($a[2] - $a[1]) < ($b[2] - $b[1]));
+
+		// сортируем их по удалённости
 		usort($axes, static function (array $axis1, array $axis2) use ($X) {
 			return abs($X - $axis1[0]) > abs($X - $axis2[0]);
 		});
@@ -266,10 +305,8 @@ class Map {
 		return $axes;
 	}
 
-	public static function findPathToExit(self $m, int $startX=null, int $startY=null) {
-		$m->startX ??= $startX;
-		$m->startY ??= $startY;
-		return self::find($m, $m->startX, $m->startY);
+	public static function findPathToExit(self $m, callable $onMove=null) {
+		return $m->move($m->startX, $m->startY, $onMove);
 	}
 
 
@@ -280,42 +317,41 @@ class Map {
 	/**
 	 * Returns [x,y] on success, otherwise returns false
 	 *
-	 * @param self $m
 	 * @param int $X
 	 * @param int $Y
-	 * @return array|false
+	 * @param callable|null $onMove
+	 * @return array|null
 	 */
-	protected static function find(self $m, int $X, int $Y) {
+	private function move(int $X, int $Y, callable $onMove=null): ?array {
 
-		$m->moveStart($X, $Y);
-		echo $m->renderNormalizedView();
+		if ($onMove) {
+			$onMove($this, $X, $Y);
+		}
 
 		$parentNode = self::addNodeTo([$X, $Y]);
 
-		$axesX = $m->getAllAxesX($X, $Y);
-		foreach ($axesX as [$y, $beginX, $endX]) {
-			if ($xN = $m->checkExitInX($beginX, $endX, $y)) {
-				return [$xN, $y];
-			}
+		if ($foundXY = $this->checkExit($X, $Y)) {
+			return $foundXY;
+		}
 
-			$axesY = $m->getAllAxesY($beginX, $y);
+		$axesX = $this->getAllAxesX($X, $Y);
+		foreach ($axesX as [$y, $beginX, $endX]) {
+
+			$axesY = $this->getAllAxesY($beginX, $y);
 			foreach ($axesY as [$x, $beginY, $endY]) {
-				if ($yN = $m->checkExitInY($x, $beginY, $endY)) {
-					return [$x, $yN];
-				}
 
 				$point = [$x, $y];
 				//print("crossroad: " . formatXY($point) . "\n");
 				if (null === self::getNode($point)) {
 					self::addNodeTo($point, $parentNode);
-					if ($result = self::find($m, $x, $y)) {
+					if ($result = $this->move($x, $y, $onMove)) {
 						return $result;
 					}
 				}
 			}
 		}
 
-		return false;
+		return null;
 	}
 
 	public static function addNodeTo(array $xy, int $parentNode=0): int {
@@ -326,7 +362,7 @@ class Map {
 	}
 
 	public static function newNode(array $xy): int {
-		$point = formatXY($xy);
+		$point = self::formatXY($xy);
 		self::$nodes[] = $point;
 		return count(self::$nodes) - 1;
 	}
@@ -334,5 +370,9 @@ class Map {
 	public static function getNode(array $xy) {
 		$key = implode(',', $xy);
 		return self::$xyToIndex[$key] ?? null;
+	}
+
+	private static function formatXY(array $xy) {
+		return vsprintf('[%d,%d]', $xy);
 	}
 }
