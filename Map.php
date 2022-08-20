@@ -6,7 +6,7 @@ class Map {
 
 	private const START = '1';
 	private const FULL = 'X';
-	private const FREE = '_';
+	private const SPACE = '_';
 	private const EXIT = 'E';
 
 	private array $map;
@@ -16,8 +16,8 @@ class Map {
 
 	public function __construct(
 		array $map,
-		int $startX  = null,
-		int $startY  = null,
+		int $startX = null,
+		int $startY = null,
 		int $exitX = null,
 		int $exitY = null
 	) {
@@ -26,33 +26,77 @@ class Map {
 		$this->sizeX = count($map);
 		$this->sizeY = count($map[0]);
 
-		// init start position
-		[$x, $y] = self::findStart($this);
-		if (null !== $x || null !== $y) {
-			$this->map[$x][$y] = self::FREE;
+		// INIT START POINT
+		// ~~~~~~~~~~~~~~~~
+
+		// Точка старта, когда она есть, удаляется с карты,
+		// а при отрисовке она накладывается сверху
+
+		if ($startPoint = self::findStart($this)) {
+			$this->setPoint($startPoint, self::SPACE);
 		}
+
+		[$x, $y] = $startPoint;
 		$startX ??= $x;
 		$startY ??= $y;
+
 		if ($startX === null || $startY === null) {
 			throw new RuntimeException('Start position undefined');
 		}
-		$this->startX = $startX;
-		$this->startY = $startY;
-		$this->map[$this->startX][$this->startY] = self::START;
 
-		// init exit position
-		[$x, $y] = self::findExit($this);
-		if (null !== $x || null !== $y) {
-			$this->map[$x][$y] = self::FREE;
+		$this->setStart($startX, $startY);
+
+		// INIT EXIT POINT
+		// ~~~~~~~~~~~~~~~
+
+		if ($exitPoint = self::findExit($this)) {
+			$this->setPoint($exitPoint, self::SPACE); // remove EXIT point
 		}
+
+		[$x, $y] = $exitPoint;
 		$exitX ??= $x;
 		$exitY ??= $y;
+
 		if ($exitX === null || $exitY === null) {
 			throw new RuntimeException('Exit position undefined');
 		}
-		$this->exitX = $exitX;
-		$this->exitY = $exitY;
-		$this->map[$this->exitX][$this->exitY] = self::EXIT;
+
+		$this->setExit($exitX, $exitY);
+		$this->setPoint($this->getExit(), self::EXIT); // setup EXIT point
+
+		// VALIDATION
+		// ~~~~~~~~~~
+
+		if ($this->getStart() === $this->getExit()) {
+			throw new RuntimeException('Start position can not be equals exit position');
+		}
+	}
+
+	private function setPoint(array $point, string $mapValue): void {
+		[$x, $y] = $point;
+		$this->map[$x][$y] = $mapValue;
+	}
+
+	public static function findStart(self $me): ?array {
+		foreach ($me->map as $i => $row) {
+			foreach ($row as $j => $value) {
+				if ($value === self::START) {
+					return [$i, $j];
+				}
+			}
+		}
+		return null;
+	}
+
+	public static function findExit(self $me): ?array {
+		foreach ($me->map as $i => $row) {
+			foreach ($row as $j => $value) {
+				if ($value === self::EXIT) {
+					return [$i, $j];
+				}
+			}
+		}
+		return null;
 	}
 
 	public function getSize(): array {
@@ -63,58 +107,37 @@ class Map {
 		return [$this->startX, $this->startY];
 	}
 
+	public function setStart(int $x, int $y): void {
+		$this->startX = $x;
+		$this->startY = $y;
+	}
+
 	public function getExit(): array {
 		return [$this->exitX, $this->exitY];
 	}
 
-	public static function findStart(self $me): array {
-		foreach ($me->map as $i => $row) {
-			foreach ($row as $j => $value) {
-				if ($value === self::START) {
-					return [$i, $j];
-				}
-			}
-		}
-		return [null, null];
+	public function setExit(int $x, int $y): void {
+		$this->exitX = $x;
+		$this->exitY = $y;
 	}
 
-	public static function findExit(self $me): array {
-		foreach ($me->map as $i => $row) {
-			foreach ($row as $j => $value) {
-				if ($value === self::EXIT) {
-					return [$i, $j];
-				}
-			}
-		}
-		return [null, null];
-	}
+	public function renderHumanizedView(): string {
 
-	public function moveStart(int $x, int $y): void {
-		$this->map[$this->startX][$this->startY] = self::FREE;
-		$this->startX = $x;
-		$this->startY = $y;
-		$this->map[$this->startX][$this->startY] = self::START;
-	}
-
-	public function renderNormalizedView(): string {
 		$m = $this->map;
+		$m[$this->startX][$this->startY] = self::START; // override cell
+
 		$myMap = [];
 		foreach ($m as $i => $row) {
-			$cols = [];
-			foreach ($row as $j => $col) {
-				$cols[] = $m[$j][$i];
+			foreach ($row as $j => $cell) {
+				$myMap[$j][$i] = $cell;
 			}
-			$myMap[] = $cols;
 		}
 		$myMap = array_reverse($myMap);
-		return self::renderMap($myMap);
+		return $this->renderMap($myMap);
 	}
 
-	public function render(): string {
-		return self::renderMap($this->map);
-	}
+	private function renderMap(array $map): string {
 
-	private static function renderMap(array $map): string {
 		$s = '';
 		$rows = $map;
 		foreach ($rows as $cols) {
@@ -125,24 +148,7 @@ class Map {
 		return $frontLine . $s . $frontLine;
 	}
 
-	private function getDirections(int $x, int $y) {
-		$a = [];
-		if ($this->moveable($x-1, $y)) { // Left
-			$a[] = [$x-1, $y];
-		}
-		if ($this->moveable($x+1, $y)) { // Right
-			$a[] = [$x+1, $y];
-		}
-		if ($this->moveable($x, $y-1)) { // Up
-			$a[] = [$x, $y-1];
-		}
-		if ($this->moveable($x, $y+1)) { // Down
-			$a[] = [$x, $y+1];
-		}
-		return $a;
-	}
-
-	public function isExit(int $x, int $y): bool {
+	private function isExit(int $x, int $y): bool {
 		return $this->map[$x][$y] === self::EXIT;
 	}
 
@@ -153,10 +159,9 @@ class Map {
 	 * @param int $y
 	 * @return array|null
 	 */
-	public function checkExit(int $x, int $y): ?array {
+	private function checkExit(int $x, int $y): ?array {
 
-		// вверх
-		$i = $y+1;
+		$i = $y + 1;
 		while ($this->moveable($x, $i)) {
 			if ($this->isExit($x, $i)) {
 				return [$x, $i];
@@ -164,8 +169,7 @@ class Map {
 			$i++;
 		}
 
-		// вниз
-		$i = $y-1;
+		$i = $y - 1;
 		while ($this->moveable($x, $i)) {
 			if ($this->isExit($x, $i)) {
 				return [$x, $i];
@@ -173,8 +177,7 @@ class Map {
 			$i--;
 		}
 
-		// влево
-		$i = $x-1;
+		$i = $x - 1;
 		while ($this->moveable($i, $y)) {
 			if ($this->isExit($i, $y)) {
 				return [$i, $y];
@@ -182,8 +185,7 @@ class Map {
 			$i--;
 		}
 
-		// вправо
-		$i = $x+1;
+		$i = $x + 1;
 		while ($this->moveable($i, $y)) {
 			if ($this->isExit($i, $y)) {
 				return [$i, $y];
@@ -259,9 +261,11 @@ class Map {
 		return [$min, $max];
 	}
 
+	/**
+	 * Находим все горизонтали
+	 */
 	private function getAllAxesX(int $X, int $Y): array {
 
-		// находим все горизонтальные линии
 		$axes = [];
 		[$y1, $y2] = $this->findAxisX($X, $Y);
 		for ($n = $y1; $n <= $y2; $n++) {
@@ -274,17 +278,19 @@ class Map {
 		// и сортируем их по количеству вертикальных пересечений на них
 		//uasort($axes, static fn($a, $b) => ($a[2] - $a[1]) < ($b[2] - $b[1]));
 
-		// сортируем их по удалённости
+		// сортируем линии по удалённости от заданной точки
 		usort($axes, static function (array $axis1, array $axis2) use ($Y) {
-			return abs($Y - $axis1[0]) > abs($Y - $axis2[0]);
+			return abs($Y - $axis1[0]) - abs($Y - $axis2[0]);
 		});
 
 		return $axes;
 	}
 
+	/**
+	 * Находим все вертикали
+	 */
 	private function getAllAxesY(int $X, int $Y): array {
 
-		// находим все горизонтальные линии
 		$axes = [];
 		[$x1, $x2] = $this->findAxisY($X, $Y);
 		for ($n = $x1; $n <= $x2; $n++) {
@@ -297,38 +303,41 @@ class Map {
 		// и сортируем их по количеству горизонтальных пересечений
 		//uasort($axes, static fn($a, $b) => ($a[2] - $a[1]) < ($b[2] - $b[1]));
 
-		// сортируем их по удалённости
+		// сортируем линии по удалённости от заданной точки
 		usort($axes, static function (array $axis1, array $axis2) use ($X) {
-			return abs($X - $axis1[0]) > abs($X - $axis2[0]);
+			return abs($X - $axis1[0]) - abs($X - $axis2[0]);
 		});
 
 		return $axes;
 	}
 
-	public static function findPathToExit(self $m, callable $onMove=null) {
-		return $m->move($m->startX, $m->startY, $onMove);
+	public array $tree = [];
+	public array $nodes = [];
+	private array $xyToIndex = [];
+
+	public static function findPathToExit(self $m, callable $onMove=null): ?array {
+		$m->tree = [];
+		$m->nodes = [];
+		$m->xyToIndex = [];
+		return $m->move(-1, $m->startX, $m->startY, $onMove);
 	}
 
-
-	public static array $xyToIndex = [];
-	public static array $nodes = [];
-	public static array $tree = [];
-
 	/**
-	 * Returns [x,y] on success, otherwise returns false
+	 * Returns <code>[x,y]</code> on success, otherwise returns <code>false</code>
 	 *
+	 * @param int $parentNode
 	 * @param int $X
 	 * @param int $Y
 	 * @param callable|null $onMove
 	 * @return array|null
 	 */
-	private function move(int $X, int $Y, callable $onMove=null): ?array {
+	private function move(int $parentNode, int $X, int $Y, callable $onMove=null): ?array {
 
 		if ($onMove) {
 			$onMove($this, $X, $Y);
 		}
 
-		$parentNode = self::addNodeTo([$X, $Y]);
+		$parentNode = $this->addNodeTo([$X, $Y], $parentNode);
 
 		if ($foundXY = $this->checkExit($X, $Y)) {
 			return $foundXY;
@@ -340,11 +349,8 @@ class Map {
 			$axesY = $this->getAllAxesY($beginX, $y);
 			foreach ($axesY as [$x, $beginY, $endY]) {
 
-				$point = [$x, $y];
-				//print("crossroad: " . formatXY($point) . "\n");
-				if (null === self::getNode($point)) {
-					self::addNodeTo($point, $parentNode);
-					if ($result = $this->move($x, $y, $onMove)) {
+				if (null === $this->getNode([$x, $y])) {
+					if ($result = $this->move($parentNode, $x, $y, $onMove)) {
 						return $result;
 					}
 				}
@@ -354,25 +360,31 @@ class Map {
 		return null;
 	}
 
-	public static function addNodeTo(array $xy, int $parentNode=0): int {
-		$index = self::getNode($xy) ?? self::newNode($xy);
-		self::$tree[$parentNode][] = $index;
-		self::$xyToIndex[implode(',', $xy)] = $index;
+	private function addNodeTo(array $xy, int $parentNode=0): int {
+		$index = $this->getNode($xy) ?? $this->newNode($xy);
+		$this->tree[$parentNode][] = $index;
+		$this->xyToIndex[implode(',', $xy)] = $index;
 		return $index;
 	}
 
-	public static function newNode(array $xy): int {
+	private function newNode(array $xy): int {
 		$point = self::formatXY($xy);
-		self::$nodes[] = $point;
-		return count(self::$nodes) - 1;
+		$this->nodes[] = $point;
+		return count($this->nodes) - 1;
 	}
 
-	public static function getNode(array $xy) {
+	private function getNode(array $xy) {
 		$key = implode(',', $xy);
-		return self::$xyToIndex[$key] ?? null;
+		return $this->xyToIndex[$key] ?? null;
 	}
 
-	private static function formatXY(array $xy) {
+	/**
+	 * Utility
+	 *
+	 * @param array $xy
+	 * @return string
+	 */
+	public static function formatXY(array $xy): string {
 		return vsprintf('[%d,%d]', $xy);
 	}
 }

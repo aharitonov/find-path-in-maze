@@ -10,53 +10,53 @@ require_once __DIR__ . '/Map.php';
 //Перемещаться через стены или выходить за границы поля нельзя.
 
 $map = [// Y: 0    1    2    3    4    // X:
-			['_', '_', '1', '_', '_'], // 0
-			['X', '_', '_', 'X', '_'], // 1
+			['1', '_', '_', 'X', '_'], // 0
+			['X', 'X', '_', '_', '_'], // 1
 			['_', '_', '_', 'X', '_'], // 2
 			['_', 'X', '_', 'X', '_'], // 3
-			['_', '_', '_', 'X', 'E'], // 4
+			['_', 'X', '_', 'X', '_'], // 4
+			['_', '_', '_', 'X', '_'], // 5
+			['E', 'X', '_', '_', '_'], // 6
 ];
 
-$map = [// Y: 0    1    2    3    4    // X:
-			['1', 'X', '_', '_', '_'], // 0
-			['_', 'X', '_', 'X', '_'], // 1
-			['_', 'X', '_', 'X', '_'], // 2
-			['_', 'X', '_', 'X', '_'], // 3
-			['_', '_', '_', 'X', 'E'], // 4
-];
-
-//Задача: написать функцию, которая проверяет,
-//существует ли путь от клетки с координатами (x1, y1) до выхода, заданного координатами (x2, y2).
-
-// pathExists($map, 0, 0, 4, 4); // True
-// pathExists($map, 0, 0, 2, 1); // False
 
 initScreen();
 
 $m = new Map($map);
 echo vsprintf('Start: [%d, %d]', $m->getStart()) . PHP_EOL;
 echo vsprintf('Exit: [%d, %d]', $m->getExit()) . PHP_EOL;
-echo $m->renderNormalizedView();
+echo $m->renderHumanizedView();
 
-$cursorXY = Cli::getCursor();
-$xy = Map::findPathToExit($m, function(Map $m, int $x, int $y) use ($cursorXY) {
-	$m->moveStart($x, $y);
-	Cli::setCursor($cursorXY);
+$cursor = Cli::getCursor();
+$xy = Map::findPathToExit($m, static function(Map $m, int $x, int $y) use ($cursor)
+{
+	$m->setStart($x, $y); // move to actual position for showing
+
+	Cli::setCursor($cursor); // restore location
 	echo PHP_EOL;
-	echo $m->renderNormalizedView();
+	echo $m->renderHumanizedView();
 	usleep(500_000);
 });
 
 print ($xy ? vsprintf("Path found to: [%d,%d]", $xy) : 'Path not found');
 print PHP_EOL;
 print PHP_EOL;
-print 'NODE INFO: ';
-print_r(Map::$nodes);
+//print 'NODE INFO: ';
+//print_r($m->nodes);
 print 'TREE: ';
-print_r(Map::$tree);
+print_r($m->tree);
+
+$path = [];
+array_walk_recursive($m->tree, static function(&$value) use ($m, &$path) {
+	$path[] = $m->nodes[$value];
+});
+print 'PATH: ' . implode(', ', $path);
+print PHP_EOL;
+//print_r($m->tree);
 
 
-function initScreen() {
+function initScreen()
+{
 	Cli::clearScreen();
 	$progName = basename(__FILE__);
 	echo basename(__FILE__) . PHP_EOL;
@@ -64,7 +64,8 @@ function initScreen() {
 	echo PHP_EOL;
 }
 
-function dd(...$arguments) {
+function dd(...$arguments)
+{
 	array_map('var_dump', $arguments);
 	exit(1);
 }
