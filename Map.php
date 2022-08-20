@@ -200,35 +200,23 @@ class Map {
 		return isset($this->map[$x][$y]) && $this->map[$x][$y] !== self::FULL;
 	}
 
-	private function moveableByX($x, $y): bool {
-		return $this->moveable($x-1, $y) || $this->moveable($x+1, $y);
-	}
-
-	private function moveableByY($x, $y): bool {
-		return $this->moveable($x, $y-1) || $this->moveable($x, $y+1);
-	}
-
 	/**
 	 * Находим возможные горизонтали от заданной точки
 	 */
-	private function findAxisX(int $x, int $y): array {
+	private function findAxesOfX(int $x, int $y): array {
 
 		$min = $y;
 		$max = $y;
 
-		$i = $y-1;
+		$i = $y - 1;
 		while ($this->moveable($x, $i)) {
-			//if ($this->moveableByX($x, $i)) {
-				$min = $i;
-			//}
+			$min = $i;
 			$i--;
 		}
 
-		$i = $y+1;
+		$i = $y + 1;
 		while ($this->moveable($x, $i)) {
-			//if ($this->moveableByX($x, $i)) {
-				$max = $i;
-			//}
+			$max = $i;
 			$i++;
 		}
 
@@ -238,26 +226,23 @@ class Map {
 	/**
 	 * Находим возможные вертикали от заданной точки
 	 */
-	private function findAxisY(int $x, int $y): array {
+	private function findAxesOfY(int $x, int $y): array {
 
 		$min = $x;
 		$max = $x;
 
-		$i = $x-1;
+		$i = $x - 1;
 		while ($this->moveable($i, $y)) {
-			//if ($this->moveableByY($i, $y)) {
-				$min = $i;
-			//}
+			$min = $i;
 			$i--;
 		}
 
-		$i = $x+1;
+		$i = $x + 1;
 		while ($this->moveable($i, $y)) {
-			//if ($this->moveableByY($i, $y)) {
-				$max = $i;
-			//}
+			$max = $i;
 			$i++;
 		}
+
 		return [$min, $max];
 	}
 
@@ -267,9 +252,9 @@ class Map {
 	private function getAllAxesX(int $X, int $Y): array {
 
 		$axes = [];
-		[$y1, $y2] = $this->findAxisX($X, $Y);
+		[$y1, $y2] = $this->findAxesOfX($X, $Y);
 		for ($n = $y1; $n <= $y2; $n++) {
-			[$a, $b] = $this->findAxisY($X, $n);
+			[$a, $b] = $this->findAxesOfY($X, $n);
 			if (($b - $a) > 0) {
 				$axes[] = [$n, $a, $b];
 			}
@@ -292,9 +277,9 @@ class Map {
 	private function getAllAxesY(int $X, int $Y): array {
 
 		$axes = [];
-		[$x1, $x2] = $this->findAxisY($X, $Y);
+		[$x1, $x2] = $this->findAxesOfY($X, $Y);
 		for ($n = $x1; $n <= $x2; $n++) {
-			[$a, $b] = $this->findAxisX($n, $Y);
+			[$a, $b] = $this->findAxesOfX($n, $Y);
 			if (($b - $a) > 0) {
 				$axes[] = [$n, $a, $b];
 			}
