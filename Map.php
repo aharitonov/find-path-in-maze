@@ -325,13 +325,14 @@ class Map {
 		$parentNode = $this->addNodeTo([$X, $Y], $parentNode);
 
 		if ($foundXY = $this->checkExit($X, $Y)) {
+			$this->addNodeTo($foundXY, $parentNode);
 			return $foundXY;
 		}
 
 		$axesX = $this->getAllAxesX($X, $Y);
 		foreach ($axesX as [$y, $beginX, $endX]) {
 
-			$axesY = $this->getAllAxesY($beginX, $y);
+			$axesY = $this->getAllAxesY($X, $y);
 			foreach ($axesY as [$x, $beginY, $endY]) {
 
 				if (null === $this->getNode([$x, $y])) {
