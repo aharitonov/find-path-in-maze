@@ -18,6 +18,14 @@ $map = [
     ['_', '_', '_', '_', '_'], // 4
 ];
 
+$map = [
+// Y: 0    1    2    3    4    // X:
+	['_', '_', '_', '_', '_'], // 0
+    ['_', '_', 'X', '_', '_'], // 1
+    ['X', ' ', '1', 'X', '_'], // 2
+    ['X', '_', 'X', '_', '_'], // 3
+    ['E', '_', '_', '_', '_'], // 4
+];
 
 initScreen();
 
@@ -40,18 +48,23 @@ $xy = Map::findPathToExit($m, static function(Map $m, int $x, int $y) use ($curs
 print ($xy ? vsprintf("Path found to: [%d,%d]", $xy) : 'Path not found');
 print PHP_EOL;
 print PHP_EOL;
-//print 'NODE INFO: ';
-//print_r($m->nodes);
+print 'NODE INFO: ';
+print_r($m->nodes);
+
+array_walk_recursive($m->tree, static function(&$value, $key) use ($m) {
+	$value = "#$value. " . $m->nodes[$value];
+	//$value = "#$value. " . $m->nodes[$key] . ' => ' . $m->nodes[$value];
+});
 print 'TREE: ';
 print_r($m->tree);
 
+/*
 $path = [];
 array_walk_recursive($m->tree, static function(&$value) use ($m, &$path) {
 	$path[] = $m->nodes[$value];
 });
-print 'PATH: ' . implode(', ', $path);
-print PHP_EOL;
-
+print 'PATH: ' . implode(', ', $path) . PHP_EOL;
+*/
 
 function initScreen()
 {

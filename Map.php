@@ -335,21 +335,38 @@ class Map {
 				if ($x === $X && $y === $Y) {
 					continue;
 				}
-				if ($x === $X || $y === $Y) {
-					if (!$this->getNode([$x, $y])) {
-						$nextPositions[] = [$x, $y];
+				if ($this->getNode([$x, $y])) {
+					continue;
+				}
+
+				if ($x === $X) {
+					if ($y > $Y && empty($nextPositions['U'])) {
+						$nextPositions['U'] = [$x, $y];
+					}
+					if ($y < $Y && empty($nextPositions['D'])) {
+						$nextPositions['D'] = [$x, $y];
+					}
+				}
+
+				if ($y === $Y) {
+					if ($x > $X && empty($nextPositions['R'])) {
+						$nextPositions['R'] = [$x, $y];
+					}
+					if ($x < $X && empty($nextPositions['L'])) {
+						$nextPositions['L'] = [$x, $y];
 					}
 				}
 			}
 		}
 
-		foreach ($nextPositions as [$x, $y]) {
-			if ($result = $this->move($node, $x, $y, $onMove)) {
-				return $result;
+		$result = null;
+		if ($nextPositions) {
+			foreach ($nextPositions as [$x, $y]) {
+				$result ??= $this->move($node, $x, $y, $onMove);
 			}
 		}
 
-		return null;
+		return $result;
 	}
 
 	private function addNodeTo(array $xy, int $parentNode=0): int {
