@@ -322,24 +322,30 @@ class Map {
 			$onMove($this, $X, $Y);
 		}
 
-		$parentNode = $this->addNodeTo([$X, $Y], $parentNode);
+		$node = $this->addNodeTo([$X, $Y], $parentNode);
 
 		if ($foundXY = $this->checkExit($X, $Y)) {
 			$this->addNodeTo($foundXY, $parentNode);
 			return $foundXY;
 		}
 
-		$axesX = $this->getAllAxesX($X, $Y);
-		foreach ($axesX as [$y, $beginX, $endX]) {
-
-			$axesY = $this->getAllAxesY($X, $y);
-			foreach ($axesY as [$x, $beginY, $endY]) {
-
-				if (null === $this->getNode([$x, $y])) {
-					if ($result = $this->move($parentNode, $x, $y, $onMove)) {
-						return $result;
+		$nextPositions = [];
+		foreach ($ax = $this->getAllAxesX($X, $Y) as [$y, $beginX, $endX]) {
+			foreach ($ay = $this->getAllAxesY($X, $y) as [$x, $beginY, $endY]) {
+				if ($x === $X && $y === $Y) {
+					continue;
+				}
+				if ($x === $X || $y === $Y) {
+					if (!$this->getNode([$x, $y])) {
+						$nextPositions[] = [$x, $y];
 					}
 				}
+			}
+		}
+
+		foreach ($nextPositions as [$x, $y]) {
+			if ($result = $this->move($node, $x, $y, $onMove)) {
+				return $result;
 			}
 		}
 
