@@ -329,16 +329,42 @@ class Map {
 			return $foundXY;
 		}
 
-		$nextPositions = [];
+		// находим пределы за которыми возникает пересечение маршрутов
+
+		$maxX = $this->sizeX;
+		$minX = -1;
+		$maxY = $this->sizeY;
+		$minY = -1;
+
+		$modes = [];
 		foreach ($ax = $this->getAllAxesX($X, $Y) as [$y, $beginX, $endX]) {
 			foreach ($ay = $this->getAllAxesY($X, $y) as [$x, $beginY, $endY]) {
 				if ($x === $X && $y === $Y) {
 					continue;
 				}
 				if ($this->getNode([$x, $y])) {
+					if ($x > $X) {
+						$maxX = $x;
+					} elseif($x < $X) {
+						$minX = $x;
+					}
+					if ($y > $Y) {
+						$maxY = $y;
+					} elseif($y < $Y) {
+						$minY = $y;
+					}
 					continue;
 				}
 
+				$modes[] = [$x, $y];
+			}
+		}
+
+		// находим возможные следующие точки для маршрута
+
+		$nextPositions = [];
+		foreach ($modes as [$x, $y]) {
+			if ($minX < $x && $x < $maxX && $minY < $y && $y < $maxY) {
 				if ($x === $X) {
 					if ($y > $Y && empty($nextPositions['U'])) {
 						$nextPositions['U'] = [$x, $y];
@@ -359,11 +385,15 @@ class Map {
 			}
 		}
 
+		// фильтруем точки, где возникают пересечения
+		$nextPositions = array_filter($nextPositions, static fn (array $a) =>
+			$minX < $a[0] && $a[0] < $maxX && $minY < $a[1] && $a[1] < $maxY
+		);
+
 		$result = null;
-		if ($nextPositions) {
-			foreach ($nextPositions as [$x, $y]) {
-				$result ??= $this->move($node, $x, $y, $onMove);
-			}
+
+		foreach ($nextPositions as [$x, $y]) {
+			$result ??= $this->move($node, $x, $y, $onMove);
 		}
 
 		return $result;
