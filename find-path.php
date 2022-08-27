@@ -49,31 +49,34 @@ print PHP_EOL;
 print PHP_EOL;
 print 'NODE INFO: ';
 print_r($m->nodes);
-print 'TREE: ';
-print_r($m->tree);
+//print 'TREE: ';
+//print_r($m->tree);
+print 'ROUTES: ' . PHP_EOL;
 
-
-function make_routes($nodes)
+function all_routes(int $node=0, array $route=[])
 {
 	global $m;
-	static $routes = [];
-	static $route = [];
-	foreach ($nodes as $n) {
-		if (isset($m->tree[$n])) {
-			$route[] = $n;
-			$routes = make_routes($m->tree[$n]);
-			continue;
+
+	$routes = [];
+	$route[] = $node;
+
+	if (!isset($m->tree[$node])) {
+		$routes[] = $route;
+		return $routes;
+	}
+
+	foreach ($m->tree[$node] as $n) {
+		foreach(all_routes($n, $route) as $v) {
+			$routes[] = $v;
 		}
-		$x = $route;
-		$x[] = $n;
-		$routes[] = $x;
 	}
 	return $routes;
 }
 
-$routes = make_routes($m->tree[0]);
+$routes = all_routes();
 foreach ($routes as $routePoints) {
-	print implode(",", $routePoints) . PHP_EOL;
+	$routePoints = array_map(static fn ($id) => $m->nodes[$id], $routePoints);
+	print implode(", ", $routePoints) . PHP_EOL;
 }
 
 

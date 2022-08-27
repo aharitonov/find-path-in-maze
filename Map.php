@@ -307,14 +307,14 @@ class Map {
 	/**
 	 * @var array ["x,y" => id]
 	 */
-	private array $xyToIndex = [];
+	private array $xyToNode = [];
 
 
 	public static function findPathToExit(self $m, callable $onMove=null): ?array {
 
-		$m->tree = [];
-		$m->nodes = [];
-		$m->xyToIndex = [];
+		$m->tree     = [];
+		$m->nodes    = [];
+		$m->xyToNode = [];
 
 		$result = null;
 		$rootNode = $m->newNode([$m->startX, $m->startY]);
@@ -343,7 +343,7 @@ class Map {
 				if ($x === $X && $y === $Y) {
 					continue;
 				}
-				if ($this->getNode([$x, $y])) {
+				if (null !== $this->getNode([$x, $y])) {
 					if ($x > $X) {
 						$maxX = $x;
 					} elseif($x < $X) {
@@ -432,13 +432,13 @@ class Map {
 		$point = self::formatXY($xy);
 		$this->nodes[] = $point;
 		$index = count($this->nodes) - 1;
-		$this->xyToIndex[implode(',', $xy)] = $index;
+		$this->xyToNode[implode(',', $xy)] = $index;
 		return $index;
 	}
 
 	private function getNode(array $xy): ?int {
 		$key = implode(',', $xy);
-		return $this->xyToIndex[$key] ?? null;
+		return $this->xyToNode[$key] ?? null;
 	}
 
 	/**
