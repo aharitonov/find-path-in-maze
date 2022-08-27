@@ -296,38 +296,39 @@ class Map {
 		return $axes;
 	}
 
+	/**
+	 * @var array [id => [child_id_1, child_id_2, ...]]
+	 */
 	public array $tree = [];
+	/**
+	 * @var array [id => [x, y]]
+	 */
 	public array $nodes = [];
+	/**
+	 * @var array ["x,y" => id]
+	 */
 	private array $xyToIndex = [];
 
+
 	public static function findPathToExit(self $m, callable $onMove=null): ?array {
+
 		$m->tree = [];
 		$m->nodes = [];
 		$m->xyToIndex = [];
-		return $m->move(-1, $m->startX, $m->startY, $onMove);
+
+		$result = null;
+		$rootNode = $m->newNode([$m->startX, $m->startY]);
+		$moves = $m->findNextMoves($m->startX, $m->startY);
+		foreach ($moves as [$x, $y]) {
+			$result ??= $m->move($rootNode, $x, $y, $onMove);
+		}
+		return $result;
 	}
 
 	/**
-	 * Returns <code>[x,y]</code> on success, otherwise returns <code>false</code>
-	 *
-	 * @param int $parentNode
-	 * @param int $X
-	 * @param int $Y
-	 * @param callable|null $onMove
-	 * @return array|null
+	 * @return array[[int,int]]
 	 */
-	private function move(int $parentNode, int $X, int $Y, callable $onMove=null): ?array {
-
-		if ($onMove) {
-			$onMove($this, $X, $Y);
-		}
-
-		$node = $this->addNodeTo([$X, $Y], $parentNode);
-
-		if ($foundXY = $this->checkExit($X, $Y)) {
-			$this->addNodeTo($foundXY, $parentNode);
-			return $foundXY;
-		}
+	private function findNextMoves(int $X, int $Y): array {
 
 		// находим пределы за которыми возникает пересечение маршрутов
 
@@ -386,33 +387,56 @@ class Map {
 		}
 
 		// фильтруем точки, где возникают пересечения
-		$nextPositions = array_filter($nextPositions, static fn (array $a) =>
+
+		return array_filter($nextPositions, static fn (array $a) =>
 			$minX < $a[0] && $a[0] < $maxX && $minY < $a[1] && $a[1] < $maxY
 		);
+	}
+
+	/**
+	 * Returns <code>[x,y]</code> on success, otherwise returns <code>false</code>
+	 *
+	 * @param int $parentNode
+	 * @param int $X
+	 * @param int $Y
+	 * @param callable|null $onMove
+	 * @return array|null
+	 */
+	private function move(int $parentNode, int $X, int $Y, callable $onMove=null): ?array {
+
+		if ($onMove) {
+			$onMove($this, $X, $Y);
+		}
+
+		$node = $this->newNode([$X, $Y]);
+		$this->bind($parentNode, $node);
+
+		if ($foundXY = $this->checkExit($X, $Y)) {
+			$this->bind($node, $this->newNode($foundXY));
+			return $foundXY;
+		}
 
 		$result = null;
-
+		$nextPositions = $this->findNextMoves($X, $Y);
 		foreach ($nextPositions as [$x, $y]) {
 			$result ??= $this->move($node, $x, $y, $onMove);
 		}
-
 		return $result;
 	}
 
-	private function addNodeTo(array $xy, int $parentNode=0): int {
-		$index = $this->getNode($xy) ?? $this->newNode($xy);
-		$this->tree[$parentNode][] = $index;
-		$this->xyToIndex[implode(',', $xy)] = $index;
-		return $index;
+	private function bind(int $parentNode, int $node): void {
+		$this->tree[$parentNode][] = $node;
 	}
 
 	private function newNode(array $xy): int {
 		$point = self::formatXY($xy);
 		$this->nodes[] = $point;
-		return count($this->nodes) - 1;
+		$index = count($this->nodes) - 1;
+		$this->xyToIndex[implode(',', $xy)] = $index;
+		return $index;
 	}
 
-	private function getNode(array $xy) {
+	private function getNode(array $xy): ?int {
 		$key = implode(',', $xy);
 		return $this->xyToIndex[$key] ?? null;
 	}
