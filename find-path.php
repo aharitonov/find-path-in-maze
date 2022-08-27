@@ -20,11 +20,10 @@ $map = [
 
 $map = [
 // Y: 0    1    2    3    4    // X:
-	['_', '_', '_', '_', '_'], // 0
-    ['_', '_', 'X', '_', '_'], // 1
-    ['X', ' ', '1', 'X', '_'], // 2
-    ['X', '_', 'X', '_', '_'], // 3
-    ['E', '_', '_', '_', '_'], // 4
+    ['_', '_', 'X', '_',    ], // 0
+    ['X', ' ', '1', '_',    ], // 1
+    ['X', 'X', 'X', '_',    ], // 2
+    ['E', '_', '_', '_',    ], // 3
 ];
 
 initScreen();
@@ -50,13 +49,72 @@ print PHP_EOL;
 print PHP_EOL;
 print 'NODE INFO: ';
 print_r($m->nodes);
+print 'TREE: ';
+print_r($m->tree);
 
+
+function make_routes($nodes)
+{
+	global $m;
+	static $routes = [];
+	static $route = [];
+	foreach ($nodes as $n) {
+		if (isset($m->tree[$n])) {
+			$route[] = $n;
+			$routes = make_routes($m->tree[$n]);
+			continue;
+		}
+		$x = $route;
+		$x[] = $n;
+		$routes[] = $x;
+	}
+	return $routes;
+}
+
+$routes = make_routes($m->tree[0]);
+foreach ($routes as $routePoints) {
+	print implode(",", $routePoints) . PHP_EOL;
+}
+
+
+
+/*
 array_walk_recursive($m->tree, static function(&$value, $key) use ($m) {
 	$value = "#$value. " . $m->nodes[$value];
 	//$value = "#$value. " . $m->nodes[$key] . ' => ' . $m->nodes[$value];
 });
-print 'TREE: ';
-print_r($m->tree);
+*/
+/*
+function show_tree($nodes) {
+	global $m;
+
+	foreach ($nodes as $n) {
+		if (!isset($m->tree[$n])) {
+			echo PHP_EOL;
+			continue;
+		}
+		print $m->nodes[$n] . PHP_EOL;
+		show_tree($m->tree[$n]);
+	}
+}
+
+show_tree($m->tree[0]);
+*/
+
+
+/*
+$node = 0; // root
+LOOP:
+foreach ($m->tree[$node] as $n) {
+	print $m->nodes[$n] . PHP_EOL;
+	if (!isset($m->tree[$n])) {
+		print "No $n" . PHP_EOL;
+		continue;
+	}
+	$node = $n;
+	goto LOOP;
+}
+*/
 
 /*
 $path = [];
