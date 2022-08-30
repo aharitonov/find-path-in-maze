@@ -310,7 +310,11 @@ class Map {
 	private array $xyToNode = [];
 
 
-	public static function findPathToExit(self $m, callable $onMove=null): ?array {
+	public static function findPathToExit(
+		self $m,
+		callable $onMove = null,
+		bool $stopOnFirstFound = false
+	): ?array {
 
 		$m->tree     = [];
 		$m->nodes    = [];
@@ -320,7 +324,13 @@ class Map {
 		$rootNode = $m->newNode([$m->startX, $m->startY]);
 		$moves = $m->findNextMoves($m->startX, $m->startY);
 		foreach ($moves as [$x, $y]) {
-			$result ??= $m->move($rootNode, $x, $y, $onMove);
+			$found = $m->move($rootNode, $x, $y, $onMove);
+			if ($found) {
+				$result = $found;
+				if ($stopOnFirstFound) {
+					break;
+				}
+			}
 		}
 		return $result;
 	}
