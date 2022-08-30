@@ -75,7 +75,7 @@ function all_routes(int $node=0, array $route=[])
 
 $routes = all_routes();
 foreach ($routes as $routePoints) {
-	$routePoints = array_map(static fn ($id) => $m->nodes[$id], $routePoints);
+	$routePoints = array_map(static fn ($id) => Map::formatXY($m->nodes[$id]), $routePoints);
 	print implode(", ", $routePoints) . PHP_EOL;
 }
 

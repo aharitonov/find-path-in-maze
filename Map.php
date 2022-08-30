@@ -325,72 +325,92 @@ class Map {
 		return $result;
 	}
 
+	private function findRouteFrameOnX(int $X, int $Y): array {
+		$max = $this->sizeX;
+		$min = -1;
+		foreach ($this->nodes as [$x, $y]) {
+			if ($y === $Y) {
+				if ($x === $X) {
+					continue;
+				}
+				if ($x > $X) {
+					if ($max > $x) {
+						$max = $x;
+					}
+				} else {
+					if ($min < $x) {
+						$min = $x;
+					}
+				}
+			}
+		}
+		return [$min, $max];
+	}
+
+	private function findRouteFrameOnY(int $X, int $Y): array {
+		$max = $this->sizeY;
+		$min = -1;
+		foreach ($this->nodes as [$x, $y]) {
+			if ($x === $X) {
+				if ($y === $Y) {
+					continue;
+				}
+				if ($y > $Y) {
+					if ($max > $y) {
+						$max = $y;
+					}
+				} else {
+					if ($min < $y) {
+						$min = $y;
+					}
+				}
+			}
+		}
+		return [$min, $max];
+	}
+
 	/**
 	 * @return array[[int,int]]
 	 */
 	private function findNextMoves(int $X, int $Y): array {
 
-		// находим пределы за которыми возникает пересечение маршрутов
-
-		$maxX = $this->sizeX;
-		$minX = -1;
-		$maxY = $this->sizeY;
-		$minY = -1;
+		// предотвращаем наложение маршрутов
+		[$minX, $maxX] = $this->findRouteFrameOnX($X, $Y);
+		[$minY, $maxY] = $this->findRouteFrameOnY($X, $Y);
 
 		$modes = [];
 		foreach ($ax = $this->getAllAxesX($X, $Y) as [$y, $beginX, $endX]) {
 			foreach ($ay = $this->getAllAxesY($X, $y) as [$x, $beginY, $endY]) {
-				if ($x === $X && $y === $Y) {
-					continue;
+				if ($x < $maxX && $x > $minX && $y > $minY && $y < $maxY) {
+					$modes[] = [$x, $y];
 				}
-				if (null !== $this->getNode([$x, $y])) {
-					if ($x > $X) {
-						$maxX = $x;
-					} elseif($x < $X) {
-						$minX = $x;
-					}
-					if ($y > $Y) {
-						$maxY = $y;
-					} elseif($y < $Y) {
-						$minY = $y;
-					}
-					continue;
-				}
-
-				$modes[] = [$x, $y];
 			}
 		}
 
-		// находим возможные следующие точки для маршрута
-
+		// возможные следующие точки для маршрута
 		$nextPositions = [];
-		foreach ($modes as [$x, $y]) {
-			if ($minX < $x && $x < $maxX && $minY < $y && $y < $maxY) {
-				if ($x === $X) {
-					if ($y > $Y && empty($nextPositions['U'])) {
-						$nextPositions['U'] = [$x, $y];
-					}
-					if ($y < $Y && empty($nextPositions['D'])) {
-						$nextPositions['D'] = [$x, $y];
-					}
-				}
 
-				if ($y === $Y) {
-					if ($x > $X && empty($nextPositions['R'])) {
-						$nextPositions['R'] = [$x, $y];
-					}
-					if ($x < $X && empty($nextPositions['L'])) {
-						$nextPositions['L'] = [$x, $y];
-					}
+		foreach ($modes as [$x, $y]) {
+			if ($x === $X) {
+				if ($y > $Y && empty($nextPositions['U'])) {
+					$nextPositions['U'] = [$x, $y];
+				}
+				if ($y < $Y && empty($nextPositions['D'])) {
+					$nextPositions['D'] = [$x, $y];
+				}
+			}
+
+			if ($y === $Y) {
+				if ($x > $X && empty($nextPositions['R'])) {
+					$nextPositions['R'] = [$x, $y];
+				}
+				if ($x < $X && empty($nextPositions['L'])) {
+					$nextPositions['L'] = [$x, $y];
 				}
 			}
 		}
 
-		// фильтруем точки, где возникают пересечения
-
-		return array_filter($nextPositions, static fn (array $a) =>
-			$minX < $a[0] && $a[0] < $maxX && $minY < $a[1] && $a[1] < $maxY
-		);
+		return $nextPositions;
 	}
 
 	/**
@@ -429,8 +449,7 @@ class Map {
 	}
 
 	private function newNode(array $xy): int {
-		$point = self::formatXY($xy);
-		$this->nodes[] = $point;
+		$this->nodes[] = $xy;
 		$index = count($this->nodes) - 1;
 		$this->xyToNode[implode(',', $xy)] = $index;
 		return $index;
