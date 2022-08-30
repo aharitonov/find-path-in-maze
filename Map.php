@@ -459,14 +459,4 @@ class Map {
 		$key = implode(',', $xy);
 		return $this->xyToNode[$key] ?? null;
 	}
-
-	/**
-	 * Utility
-	 *
-	 * @param array $xy
-	 * @return string
-	 */
-	public static function formatXY(array $xy): string {
-		return vsprintf('[%d,%d]', $xy);
-	}
 }

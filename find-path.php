@@ -18,6 +18,7 @@ $map = [
     ['_', '_', '_', '_', '_'], // 4
 ];
 
+/*
 $map = [
 // Y: 0    1    2    3    4    // X:
     ['_', '_', 'X', '_',    ], // 0
@@ -25,6 +26,7 @@ $map = [
     ['X', 'X', 'X', '_',    ], // 2
     ['E', '_', '_', '_',    ], // 3
 ];
+*/
 
 initScreen();
 
@@ -48,12 +50,22 @@ print ($xy ? vsprintf("Path found to: [%d,%d]", $xy) : 'Path not found');
 print PHP_EOL;
 print PHP_EOL;
 print 'NODE INFO: ';
-print_r($m->nodes);
+print_r(array_map(static fn(array $xy) => formatXY($xy), $m->nodes));
+print PHP_EOL;
+print PHP_EOL;
 //print 'TREE: ';
 //print_r($m->tree);
 print 'ROUTES: ' . PHP_EOL;
+$routes = all_routes();
+foreach ($routes as $routePoints) {
+	$routePoints = array_map(static fn ($id) => formatXY($m->nodes[$id]), $routePoints);
+	print implode(", ", $routePoints) . PHP_EOL;
+}
 
-function all_routes(int $node=0, array $route=[])
+
+
+
+function all_routes(int $node=0, array $route=[]): array
 {
 	global $m;
 
@@ -73,59 +85,10 @@ function all_routes(int $node=0, array $route=[])
 	return $routes;
 }
 
-$routes = all_routes();
-foreach ($routes as $routePoints) {
-	$routePoints = array_map(static fn ($id) => Map::formatXY($m->nodes[$id]), $routePoints);
-	print implode(", ", $routePoints) . PHP_EOL;
+function formatXY(array $xy): string
+{
+	return vsprintf('[%d,%d]', $xy);
 }
-
-
-
-/*
-array_walk_recursive($m->tree, static function(&$value, $key) use ($m) {
-	$value = "#$value. " . $m->nodes[$value];
-	//$value = "#$value. " . $m->nodes[$key] . ' => ' . $m->nodes[$value];
-});
-*/
-/*
-function show_tree($nodes) {
-	global $m;
-
-	foreach ($nodes as $n) {
-		if (!isset($m->tree[$n])) {
-			echo PHP_EOL;
-			continue;
-		}
-		print $m->nodes[$n] . PHP_EOL;
-		show_tree($m->tree[$n]);
-	}
-}
-
-show_tree($m->tree[0]);
-*/
-
-
-/*
-$node = 0; // root
-LOOP:
-foreach ($m->tree[$node] as $n) {
-	print $m->nodes[$n] . PHP_EOL;
-	if (!isset($m->tree[$n])) {
-		print "No $n" . PHP_EOL;
-		continue;
-	}
-	$node = $n;
-	goto LOOP;
-}
-*/
-
-/*
-$path = [];
-array_walk_recursive($m->tree, static function(&$value) use ($m, &$path) {
-	$path[] = $m->nodes[$value];
-});
-print 'PATH: ' . implode(', ', $path) . PHP_EOL;
-*/
 
 function initScreen()
 {
