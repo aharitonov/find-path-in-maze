@@ -56,7 +56,7 @@ print PHP_EOL;
 //print 'TREE: ';
 //print_r($m->tree);
 print 'ROUTES: ' . PHP_EOL;
-$routes = all_routes();
+$routes = Map::treeToRoutes($m);
 foreach ($routes as $routePoints) {
 	$routePoints = array_map(static fn ($id) => formatXY($m->nodes[$id]), $routePoints);
 	print implode(", ", $routePoints) . PHP_EOL;
@@ -65,31 +65,6 @@ foreach ($routes as $routePoints) {
 
 
 
-function all_routes(int $node=0, array $route=[]): array
-{
-	global $m;
-
-	$routes = [];
-	$route[] = $node;
-
-	if (!isset($m->tree[$node])) {
-		$routes[] = $route;
-		return $routes;
-	}
-
-	foreach ($m->tree[$node] as $n) {
-		foreach(all_routes($n, $route) as $v) {
-			$routes[] = $v;
-		}
-	}
-	return $routes;
-}
-
-function formatXY(array $xy): string
-{
-	return vsprintf('[%d,%d]', $xy);
-}
-
 function initScreen()
 {
 	Cli::clearScreen();
@@ -97,6 +72,11 @@ function initScreen()
 	echo basename(__FILE__) . PHP_EOL;
 	echo str_repeat("=", strlen($progName)) . PHP_EOL;
 	echo PHP_EOL;
+}
+
+function formatXY(array $xy): string
+{
+	return vsprintf('[%d,%d]', $xy);
 }
 
 function dd(...$arguments)

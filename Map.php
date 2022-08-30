@@ -469,4 +469,61 @@ class Map {
 		$key = implode(',', $xy);
 		return $this->xyToNode[$key] ?? null;
 	}
+
+	/**
+	 * Utility. Make sense after building the tree
+	 *
+	 * @param Map $m
+	 * @return array
+	 */
+	public static function treeToRoutes(self $m): array {
+		self::$me = $m;
+		return self::toRoutes();
+	}
+
+	private static self $me;
+
+	/**
+	 * Tree:
+	 * <code>
+	 * 	[
+	 * 		0  => [10, 20, 40],
+	 * 		10 => [30, 40],
+	 * 		20 => [60, 70, 110],
+	 * 		40 => [80],
+	 * 	];
+	 * </code>
+	 *
+	 * Result:
+	 * <code>
+	 * 	[
+	 * 		[0, 10, 30    ],
+	 * 		[0, 10, 40, 80],
+	 * 		[0, 20, 60    ],
+	 * 		[0, 20, 70    ],
+	 * 		[0, 20, 110   ],
+	 * 		[0, 40, 80    ],
+	 * 	]
+	 * </code>
+	 *
+	 * @param int $node
+	 * @param array $route
+	 * @return array
+	 */
+	private static function toRoutes(int $node=0, array $route=[]): array {
+		$routes = [];
+		$route[] = $node;
+
+		if (!isset(self::$me->tree[$node])) {
+			$routes[] = $route;
+			return $routes;
+		}
+
+		foreach (self::$me->tree[$node] as $n) {
+			foreach (self::toRoutes($n, $route) as $v) {
+				$routes[] = $v;
+			}
+		}
+		return $routes;
+	}
 }
