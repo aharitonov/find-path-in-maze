@@ -49,21 +49,34 @@ $xy = Map::findPathToExit($m, static function(Map $m, int $x, int $y) use ($curs
 print ($xy ? vsprintf("Path found to: [%d,%d]", $xy) : 'Path not found');
 print PHP_EOL;
 print PHP_EOL;
+
 print 'NODE INFO: ';
 print_r(array_map(static fn(array $xy) => formatXY($xy), $m->nodes));
 print PHP_EOL;
 print PHP_EOL;
-//print 'TREE: ';
-//print_r($m->tree);
+
 print 'ROUTES: ' . PHP_EOL;
 $routes = Map::treeToRoutes($m);
-foreach ($routes as $routePoints) {
-	$routePoints = array_map(static fn ($id) => formatXY($m->nodes[$id]), $routePoints);
-	print implode(", ", $routePoints) . PHP_EOL;
+foreach ($routes as $route) {
+	$points = array_map(static fn(array $xy) => formatXY($xy), $route);
+	print implode(", ", $points) . PHP_EOL;
 }
+print PHP_EOL;
+print PHP_EOL;
+
+print 'ROUTE length: ';
+$routes = array_map(static fn(array $xy) => Map::computeRouteLength($xy), $routes);
+print_r($routes);
+print PHP_EOL;
+print PHP_EOL;
 
 
 
+
+function formatXY(array $xy): string
+{
+	return vsprintf('[%d,%d]', $xy);
+}
 
 function initScreen()
 {
@@ -72,11 +85,6 @@ function initScreen()
 	echo basename(__FILE__) . PHP_EOL;
 	echo str_repeat("=", strlen($progName)) . PHP_EOL;
 	echo PHP_EOL;
-}
-
-function formatXY(array $xy): string
-{
-	return vsprintf('[%d,%d]', $xy);
 }
 
 function dd(...$arguments)

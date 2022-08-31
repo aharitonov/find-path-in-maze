@@ -471,14 +471,40 @@ class Map {
 	}
 
 	/**
+	 * Utility
+	 *
+	 * @param array $points
+	 * @return int
+	 */
+	public static function computeRouteLength(array $points): int {
+		$length = 0;
+		[$x0, $y0] = $points[0];
+		for ($i=1, $iMax = count($points); $i < $iMax; $i++) {
+			[$x, $y] = $points[$i];
+			if ($x0 === $x) {
+				$length += abs($y - $y0);
+			} else {
+				$length += abs($x - $x0);
+			}
+			[$x0, $y0] = [$x, $y];
+		}
+		return $length;
+	}
+
+	/**
 	 * Utility. Make sense after building the tree
 	 *
 	 * @param Map $m
 	 * @return array
 	 */
 	public static function treeToRoutes(self $m): array {
+
 		self::$me = $m;
-		return self::toRoutes();
+		$routes = self::toRoutes();
+
+		return array_map(static function(array $route) use ($m) {
+			return array_map(static fn($id) => $m->nodes[$id], $route);
+		}, $routes);
 	}
 
 	private static self $me;
