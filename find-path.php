@@ -36,7 +36,7 @@ echo vsprintf('Exit: [%d, %d]', $m->getExit()) . PHP_EOL;
 echo $m->renderHumanizedView();
 
 $cursor = Cli::getCursor();
-$xy = Map::findPathToExit($m, static function(Map $m, int $x, int $y) use ($cursor)
+$routes = Map::findPaths($m, static function(Map $m, int $x, int $y) use ($cursor)
 {
 	$m->setStart($x, $y); // move to actual position for showing
 
@@ -46,24 +46,13 @@ $xy = Map::findPathToExit($m, static function(Map $m, int $x, int $y) use ($curs
 	usleep(500_000);
 });
 
-print ($xy ? vsprintf("Path found to: [%d,%d]", $xy) : 'Path not found');
-print PHP_EOL;
-print PHP_EOL;
-
-print 'NODE INFO: ';
-print_r(array_map(static fn(array $xy) => formatXY($xy), $m->nodes));
-print PHP_EOL;
-print PHP_EOL;
-
 print 'ROUTES: ' . PHP_EOL;
-$routes = Map::treeToRoutes($m);
-foreach ($routes as $route) {
+foreach ($routes as $i => $route) {
 	$points = array_map(static fn(array $xy) => formatXY($xy), $route);
-	print implode(", ", $points) . PHP_EOL;
+	print "$i: " . implode(", ", $points) . PHP_EOL;
 }
 print PHP_EOL;
 print PHP_EOL;
-
 print 'ROUTE length: ';
 $routes = array_map(static fn(array $xy) => Map::computeRouteLength($xy), $routes);
 print_r($routes);
