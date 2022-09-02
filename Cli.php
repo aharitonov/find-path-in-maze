@@ -48,6 +48,15 @@ class Cli {
 		printf("\033[%d;%dH", $xPos+1, $yPos+1);
 	}
 
+
+	private const NC = "\033[0m"; // reset color
+	private const RED = "\033[0;31m";
+	private const GREY = "\033[1;30m";
+
+	public static function shadowStyle(string $s) {
+		return self::GREY . $s . self::NC;
+	}
+
 	/**
 	 * Returns full path to command when command exists,
 	 * otherwise will be returned empty string

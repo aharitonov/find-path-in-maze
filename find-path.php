@@ -64,10 +64,15 @@ foreach ($routes as $i => $route) {
 	$length = Map::computeRouteLength($route);
 	$exitFound = end($route) === $m->getExit();
 	$points = array_map(static fn(array $xy) => formatXY($xy), $route);
-	print "$i: " . implode(", ", $points);
-	print ' (distance: ' . $length . ')';
-	print $exitFound ? '   --> EXIT!' : '';
-	print PHP_EOL;
+
+	$s = "$i: " . implode(", ", $points);
+	$s .= ' (distance: ' . $length . ')';
+	if ($exitFound) {
+		$s.= '   --> EXIT!';
+	} else {
+		$s = Cli::shadowStyle($s);
+	}
+	print $s . PHP_EOL;
 }
 
 
