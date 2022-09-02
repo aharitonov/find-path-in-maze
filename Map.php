@@ -8,11 +8,13 @@ class Map {
 	private const FULL = 'X';
 	private const SPACE = '_';
 	private const EXIT = 'E';
+	private const POS = '?';
 
 	private array $map;
 	private int $sizeX, $sizeY;
 	private int $exitX, $exitY;
 	private int $startX, $startY;
+	private int $posX, $posY;
 
 	public function __construct(
 		array $map,
@@ -29,9 +31,6 @@ class Map {
 		// INIT START POINT
 		// ~~~~~~~~~~~~~~~~
 
-		// Точка старта, когда она есть, удаляется с карты,
-		// а при отрисовке она накладывается сверху
-
 		if ($startPoint = self::findStart($this)) {
 			$this->setPoint($startPoint, self::SPACE);
 		}
@@ -45,6 +44,8 @@ class Map {
 		}
 
 		$this->setStart($startX, $startY);
+		$this->setPoint($this->getStart(), self::START);
+		$this->setPos($startX, $startY);
 
 		// INIT EXIT POINT
 		// ~~~~~~~~~~~~~~~
@@ -103,6 +104,15 @@ class Map {
 		return [$this->sizeX, $this->sizeY];
 	}
 
+	private function setPos(int $x, int $y): void {
+		$this->posX = $x;
+		$this->posY = $y;
+	}
+
+	public function getPos(): array {
+		return [$this->posX, $this->posY];
+	}
+
 	public function getStart(): array {
 		return [$this->startX, $this->startY];
 	}
@@ -124,7 +134,8 @@ class Map {
 	public function renderHumanizedView(): string {
 
 		$m = $this->map;
-		$m[$this->startX][$this->startY] = self::START; // override cell
+		$m[$this->posX][$this->posY] = self::POS;
+		$m[$this->startX][$this->startY] = self::START;
 
 		$myMap = [];
 		foreach ($m as $i => $row) {
@@ -322,7 +333,9 @@ class Map {
 	): array {
 
 		$routes = [];
-		[$startX, $startY] = [$m->startX, $m->startY];
+
+		[$startX, $startY] = $m->getStart();
+		$m->setPos($startX, $startY);
 
 		$moves = $m->findNextMoves($startX, $startY);
 		foreach ($moves as [$x, $y]) {
@@ -465,7 +478,8 @@ class Map {
 	private function move(int $parentNode, int $X, int $Y, callable $onMove=null): ?array {
 
 		if ($onMove) {
-			$onMove($this, $X, $Y);
+			$this->setPos($X, $Y);
+			$onMove($this);
 		}
 
 		$node = $this->newNode([$X, $Y]);

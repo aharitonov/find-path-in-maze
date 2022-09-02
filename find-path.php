@@ -27,6 +27,20 @@ $map = [
     ['E', '_', '_', '_',    ], // 3
 ];
 */
+/*
+$map = [
+// Y: 0    1    2    3    4    // X:
+    ['_', '_', '_', '_', '_', '_', 'X', '_'], // 0
+    ['_', '_', 'X', '_', 'X', '_', '_', '_'], // 0
+    ['_', 'X', 'X', '_', 'X', '_', 'X', '_'], // 0
+    ['_', '_', '_', '1', '_', '_', 'X', '_'], // 1
+    ['_', 'X', 'X', '_', 'X', 'X', 'X', '_'], // 2
+    ['_', '_', 'X', '_', 'X', '_', '_', 'E'], // 3
+    ['_', '_', 'X', '_', 'X', 'X', 'X', 'X'], // 3
+    ['_', '_', '_', '_', '_', '_', '_', '_'], // 4
+];
+*/
+
 
 initScreen();
 
@@ -36,28 +50,25 @@ echo vsprintf('Exit: [%d, %d]', $m->getExit()) . PHP_EOL;
 echo $m->renderHumanizedView();
 
 $cursor = Cli::getCursor();
-$routes = Map::findPaths($m, static function(Map $m, int $x, int $y) use ($cursor)
+$routes = Map::findPaths($m, static function(Map $m) use ($cursor)
 {
-	$m->setStart($x, $y); // move to actual position for showing
-
 	Cli::setCursor($cursor); // restore location
 	echo PHP_EOL;
 	echo $m->renderHumanizedView();
 	usleep(500_000);
 });
 
+print PHP_EOL;
 print 'ROUTES: ' . PHP_EOL;
 foreach ($routes as $i => $route) {
+	$length = Map::computeRouteLength($route);
+	$exitFound = end($route) === $m->getExit();
 	$points = array_map(static fn(array $xy) => formatXY($xy), $route);
-	print "$i: " . implode(", ", $points) . PHP_EOL;
+	print "$i: " . implode(", ", $points);
+	print ' (distance: ' . $length . ')';
+	print $exitFound ? '   --> EXIT!' : '';
+	print PHP_EOL;
 }
-print PHP_EOL;
-print PHP_EOL;
-print 'ROUTE length: ';
-$routes = array_map(static fn(array $xy) => Map::computeRouteLength($xy), $routes);
-print_r($routes);
-print PHP_EOL;
-print PHP_EOL;
 
 
 
