@@ -34,6 +34,25 @@ function pathExists(array $map, $startX, $startY, $exitX, $exitY): bool
 
 ## 2. Найти кратчайший путь
 
+```php
+function findMinimalPath(array $map, $startX, $startY, $exitX, $exitY): ?int
+{
+    $m = new Map($map, $startX, $startY, $exitX, $exitY);
+    $paths = Map::findPaths($m);
+
+    $paths = array_filter($paths, static function (array $path) use ($m) {
+        return end($path) === $m->getExit();
+    });
+
+    uasort($paths, static function (array $path1, array $path2) {
+        return Map::computePathLength($path1) - Map::computePathLength($path2);
+    });
+
+    $index = array_key_first($paths);
+    return $index ?? null; // return path index if path exists
+}
+```
+
 TODO
 
 Смотри "[find-path.php](find-path.php)"
