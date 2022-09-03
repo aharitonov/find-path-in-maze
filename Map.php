@@ -78,7 +78,7 @@ class Map {
 		$this->map[$x][$y] = $mapValue;
 	}
 
-	public static function findStart(self $me): ?array {
+	protected static function findStart(self $me): ?array {
 		foreach ($me->map as $i => $row) {
 			foreach ($row as $j => $value) {
 				if ($value === self::START) {
@@ -89,7 +89,7 @@ class Map {
 		return null;
 	}
 
-	public static function findExit(self $me): ?array {
+	protected static function findExit(self $me): ?array {
 		foreach ($me->map as $i => $row) {
 			foreach ($row as $j => $value) {
 				if ($value === self::EXIT) {
@@ -310,11 +310,11 @@ class Map {
 	/**
 	 * @var array [id => [child_id_1, child_id_2, ...]]
 	 */
-	public array $tree = [];
+	protected array $tree = [];
 	/**
 	 * @var array [id => [x, y]]
 	 */
-	public array $nodes = [];
+	protected array $nodes = [];
 	/**
 	 * @var array ["x,y" => id]
 	 */
@@ -554,6 +554,8 @@ class Map {
 	private static self $me;
 
 	/**
+	 * Recursive building route list from tree
+	 *
 	 * Tree:
 	 * <code>
 	 * 	[
