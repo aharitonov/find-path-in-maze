@@ -8,7 +8,7 @@ class Map {
 	private const FULL = 'X';
 	private const SPACE = '_';
 	private const EXIT = 'E';
-	private const POS = '?';
+	private const POS = '?'; // cursor
 
 	private array $map;
 	private int $sizeX, $sizeY;
@@ -32,7 +32,7 @@ class Map {
 		// ~~~~~~~~~~~~~~~~
 
 		if ($startPoint = self::findStart($this)) {
-			$this->setPoint($startPoint, self::SPACE);
+			$this->setPoint($startPoint, self::SPACE); // remove START point
 		}
 
 		[$x, $y] = $startPoint;
@@ -44,7 +44,7 @@ class Map {
 		}
 
 		$this->setStart($startX, $startY);
-		$this->setPoint($this->getStart(), self::START);
+		$this->setPoint($this->getStart(), self::START); // setup START point
 		$this->setPos($startX, $startY);
 
 		// INIT EXIT POINT
@@ -536,8 +536,8 @@ class Map {
 		self::$me = $m;
 		$routes = self::toRoutes();
 
-		return array_map(static function(array $route) use ($m) {
-			return array_map(static fn($id) => $m->nodes[$id], $route);
+		return array_map(static function (array $route) use ($m) {
+			return array_map(static fn ($id) => $m->nodes[$id], $route);
 		}, $routes);
 	}
 
