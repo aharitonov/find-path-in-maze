@@ -510,7 +510,7 @@ class Map {
 	 * @param array $points
 	 * @return int
 	 */
-	public static function computeRouteLength(array $points): int {
+	public static function computePathLength(array $points): int {
 		$length = 0;
 		[$x0, $y0] = $points[0];
 		for ($i=1, $iMax = count($points); $i < $iMax; $i++) {

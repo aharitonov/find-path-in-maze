@@ -53,7 +53,11 @@ class Cli {
 	private const RED = "\033[0;31m";
 	private const GREY = "\033[1;30m";
 
-	public static function shadowStyle(string $s) {
+	public static function errorStyle(string $s): string {
+		return self::RED . $s . self::NC;
+	}
+
+	public static function shadowStyle(string $s): string {
 		return self::GREY . $s . self::NC;
 	}
 

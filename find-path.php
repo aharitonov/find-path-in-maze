@@ -50,7 +50,7 @@ echo vsprintf('Exit: [%d, %d]', $m->getExit()) . PHP_EOL;
 echo $m->renderHumanizedView();
 
 $cursor = Cli::getCursor();
-$routes = Map::findPaths($m, static function(Map $m) use ($cursor)
+$paths = Map::findPaths($m, static function(Map $m) use ($cursor)
 {
 	Cli::setCursor($cursor); // restore location
 	echo PHP_EOL;
@@ -59,13 +59,13 @@ $routes = Map::findPaths($m, static function(Map $m) use ($cursor)
 });
 
 print PHP_EOL;
-print 'ROUTES: ' . PHP_EOL;
-foreach ($routes as $i => $route) {
-	$length = Map::computeRouteLength($route);
-	$exitFound = end($route) === $m->getExit();
-	$points = array_map(static fn(array $xy) => formatXY($xy), $route);
+print 'PATHS: ' . PHP_EOL;
+foreach ($paths as $i => $path) {
+	$length = Map::computePathLength($path);
+	$exitFound = end($path) === $m->getExit();
+	$points = array_map(static fn(array $xy) => formatXY($xy), $path);
 
-	$s = "$i: " . implode(", ", $points);
+	$s = sprintf('%02d: %s', $i , implode(', ', $points));
 	$s .= ' (distance: ' . $length . ')';
 	if ($exitFound) {
 		$s.= '  ---> EXIT!';
@@ -75,6 +75,26 @@ foreach ($routes as $i => $route) {
 	print $s . PHP_EOL;
 }
 
+// MINIMAL PATH
+$paths = array_filter($paths, static fn(array $path) => end($path) === $m->getExit());
+uasort($paths, static fn(array $path1, array $path2) =>
+	Map::computePathLength($path1) - Map::computePathLength($path2)
+);
+
+$i = array_key_first($paths);
+if ($i === null) {
+	print Cli::errorStyle('PATH NOT FOUND') . PHP_EOL;
+	exit;
+}
+
+print PHP_EOL;
+print 'MINIMAL PATH: ' . PHP_EOL;
+$path = $paths[$i];
+$length = Map::computePathLength($path);
+$points = array_map(static fn(array $xy) => formatXY($xy), $path);
+$s = "$i: " . implode(", ", $points);
+$s .= ' (distance: ' . $length . ')';
+print $s . PHP_EOL;
 
 
 
