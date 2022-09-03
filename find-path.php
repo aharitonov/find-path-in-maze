@@ -68,7 +68,7 @@ foreach ($routes as $i => $route) {
 	$s = "$i: " . implode(", ", $points);
 	$s .= ' (distance: ' . $length . ')';
 	if ($exitFound) {
-		$s.= '   --> EXIT!';
+		$s.= '  ---> EXIT!';
 	} else {
 		$s = Cli::shadowStyle($s);
 	}

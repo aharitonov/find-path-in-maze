@@ -326,11 +326,7 @@ class Map {
 		$this->xyToNode = [];
 	}
 
-	public static function findPaths(
-		self $m,
-		callable $onMove = null,
-		bool $stopOnFirstFound = false
-	): array {
+	public static function findPaths(self $m, callable $onMove=null): array {
 
 		$routes = [];
 
@@ -339,17 +335,11 @@ class Map {
 
 		$moves = $m->findNextMoves($startX, $startY);
 		foreach ($moves as [$x, $y]) {
-
 			$m->resetPathHistory();
-
 			$rootNode = $m->newNode([$startX, $startY]);
-			$found = $m->move($rootNode, $x, $y, $onMove);
+			$m->move($rootNode, $x, $y, $onMove);
 			foreach (self::treeToRoutes($m) as $r) {
 				$routes[] = $r;
-			}
-
-			if ($found && $stopOnFirstFound) {
-				break;
 			}
 		}
 		return $routes;
@@ -358,7 +348,7 @@ class Map {
 	public static function findPathToExit(
 		self $m,
 		callable $onMove = null,
-		bool $stopOnFirstFound = false
+		bool $stopOnFirstFound = true
 	): ?array {
 
 		$m->resetPathHistory();
