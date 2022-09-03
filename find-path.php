@@ -61,7 +61,7 @@ $paths = Map::findPaths($m, static function(Map $m) use ($cursor)
 print PHP_EOL;
 print 'PATHS: ' . PHP_EOL;
 foreach ($paths as $i => $path) {
-	$length = Map::computePathLength($path);
+	$length = Map::calcPathLength($path);
 	$exitFound = end($path) === $m->getExit();
 	$points = array_map(static fn(array $xy) => formatXY($xy), $path);
 
@@ -78,7 +78,7 @@ foreach ($paths as $i => $path) {
 // MINIMAL PATH
 $paths = array_filter($paths, static fn(array $path) => end($path) === $m->getExit());
 uasort($paths, static fn(array $path1, array $path2) =>
-	Map::computePathLength($path1) - Map::computePathLength($path2)
+	Map::calcPathLength($path1) - Map::calcPathLength($path2)
 );
 
 $i = array_key_first($paths);
@@ -90,7 +90,7 @@ if ($i === null) {
 print PHP_EOL;
 print 'MINIMAL PATH: ' . PHP_EOL;
 $path = $paths[$i];
-$length = Map::computePathLength($path);
+$length = Map::calcPathLength($path);
 $points = array_map(static fn(array $xy) => formatXY($xy), $path);
 $s = "$i: " . implode(", ", $points);
 $s .= ' (distance: ' . $length . ')';

@@ -45,7 +45,7 @@ function findMinimalPath(array $map, $startX, $startY, $exitX, $exitY): ?int
     });
 
     uasort($paths, static function (array $path1, array $path2) {
-        return Map::computePathLength($path1) - Map::computePathLength($path2);
+        return Map::calcPathLength($path1) - Map::calcPathLength($path2);
     });
 
     $index = array_key_first($paths);
